@@ -14,7 +14,136 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      portfolios: {
+        Row: {
+          about: string | null
+          created_at: string | null
+          id: string
+          name: string
+          profile_image: string | null
+          tagline: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          about?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          profile_image?: string | null
+          tagline?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          about?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          profile_image?: string | null
+          tagline?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          updated_at?: string | null
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          github: string | null
+          id: string
+          image: string | null
+          live: string | null
+          portfolio_id: string
+          tech_stack: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          github?: string | null
+          id?: string
+          image?: string | null
+          live?: string | null
+          portfolio_id: string
+          tech_stack?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          github?: string | null
+          id?: string
+          image?: string | null
+          live?: string | null
+          portfolio_id?: string
+          tech_stack?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skills: {
+        Row: {
+          created_at: string | null
+          id: string
+          portfolio_id: string
+          skill: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          portfolio_id: string
+          skill: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          portfolio_id?: string
+          skill?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skills_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

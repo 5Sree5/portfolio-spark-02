@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Github, ExternalLink, Mail, Linkedin, Twitter } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Portfolio {
   name: string;
@@ -27,39 +28,67 @@ const Portfolio = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Replace with actual API call
-    // fetch(`/api/portfolio/${username}`)
-    
-    // Mock data
-    setTimeout(() => {
-      setPortfolio({
-        name: "John Doe",
-        tagline: "Full-stack Developer & Designer",
-        image: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop",
-        about: "I'm a passionate full-stack developer with 5+ years of experience building web applications. I love creating beautiful, user-friendly interfaces and solving complex problems with elegant code.",
-        skills: ["React", "TypeScript", "Node.js", "Python", "PostgreSQL", "Tailwind CSS", "Docker", "AWS"],
-        projects: [
-          {
-            id: "1",
-            title: "E-commerce Platform",
-            description: "A full-featured online store with payment integration, inventory management, and admin dashboard.",
-            techStack: ["React", "Node.js", "PostgreSQL", "Stripe"],
-            links: { github: "https://github.com", live: "https://example.com" },
-            image: "https://images.unsplash.com/photo-1557821552-17105176677c?w=800&h=500&fit=crop",
-          },
-          {
-            id: "2",
-            title: "Task Management App",
-            description: "Collaborative project management tool with real-time updates and team collaboration features.",
-            techStack: ["TypeScript", "React", "Firebase", "Tailwind"],
-            links: { github: "https://github.com", live: "https://example.com" },
-            image: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=800&h=500&fit=crop",
-          },
-        ],
-      });
-      setLoading(false);
-    }, 500);
+    loadPortfolio();
   }, [username]);
+
+  const loadPortfolio = async () => {
+    try {
+      // Get profile by username
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", username)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+      if (!profile) {
+        setPortfolio(null);
+        setLoading(false);
+        return;
+      }
+
+      // Get portfolio with skills and projects
+      const { data: portfolioData, error: portfolioError } = await supabase
+        .from("portfolios")
+        .select(`
+          *,
+          skills(skill),
+          projects(*)
+        `)
+        .eq("user_id", profile.id)
+        .maybeSingle();
+
+      if (portfolioError) throw portfolioError;
+
+      if (portfolioData) {
+        setPortfolio({
+          name: portfolioData.name,
+          tagline: portfolioData.tagline || "",
+          image: portfolioData.profile_image || "",
+          about: portfolioData.about || "",
+          skills: portfolioData.skills?.map((s: any) => s.skill) || [],
+          projects: portfolioData.projects?.map((p: any) => ({
+            id: p.id,
+            title: p.title,
+            description: p.description || "",
+            techStack: p.tech_stack || [],
+            links: {
+              github: p.github || undefined,
+              live: p.live || undefined,
+            },
+            image: p.image || "",
+          })) || [],
+        });
+      } else {
+        setPortfolio(null);
+      }
+    } catch (error) {
+      console.error("Error loading portfolio:", error);
+      setPortfolio(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (

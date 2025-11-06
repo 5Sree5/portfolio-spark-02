@@ -1,18 +1,66 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, Eye, MessageSquare, Settings, LogOut, PlusCircle, Edit } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [portfolioExists, setPortfolioExists] = useState(false);
+  const [username, setUsername] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      navigate("/auth");
+      return;
+    }
+
+    // Get user profile and portfolio
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", session.user.id)
+      .single();
+
+    if (profile) {
+      setUsername(profile.username);
+    }
+
+    const { data: portfolio } = await supabase
+      .from("portfolios")
+      .select("id")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+
+    setPortfolioExists(!!portfolio);
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate("/auth");
   };
 
-  // Mock portfolio status
-  const portfolioExists = false;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -53,14 +101,17 @@ const Dashboard = () => {
               </CardHeader>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/u/johndoe")}>
+            <Card 
+              className={`hover:shadow-lg transition-shadow ${portfolioExists ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
+              onClick={() => portfolioExists && navigate(`/u/${username}`)}
+            >
               <CardHeader>
                 <div className="w-12 h-12 rounded-lg bg-accent flex items-center justify-center mb-2">
                   <Eye className="w-6 h-6 text-accent-foreground" />
                 </div>
                 <CardTitle>Preview Portfolio</CardTitle>
                 <CardDescription>
-                  See how your portfolio looks to visitors
+                  {portfolioExists ? "See how your portfolio looks to visitors" : "Create a portfolio first"}
                 </CardDescription>
               </CardHeader>
             </Card>

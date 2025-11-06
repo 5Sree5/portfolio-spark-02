@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sparkles, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import ProfileStep from "@/components/builder/ProfileStep";
 import AboutStep from "@/components/builder/AboutStep";
 import SkillsStep from "@/components/builder/SkillsStep";
@@ -31,12 +32,63 @@ const Builder = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [portfolioData, setPortfolioData] = useState<PortfolioData>({
     profile: { name: "", tagline: "", image: "" },
     about: "",
     skills: [],
     projects: [],
   });
+
+  useEffect(() => {
+    loadPortfolio();
+  }, []);
+
+  const loadPortfolio = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      navigate("/auth");
+      return;
+    }
+
+    // Load existing portfolio if it exists
+    const { data: portfolio } = await supabase
+      .from("portfolios")
+      .select(`
+        *,
+        skills(skill),
+        projects(*)
+      `)
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+
+    if (portfolio) {
+      setPortfolioData({
+        profile: {
+          name: portfolio.name,
+          tagline: portfolio.tagline || "",
+          image: portfolio.profile_image || "",
+        },
+        about: portfolio.about || "",
+        skills: portfolio.skills?.map((s: any) => s.skill) || [],
+        projects: portfolio.projects?.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          description: p.description || "",
+          techStack: p.tech_stack || [],
+          links: {
+            github: p.github || undefined,
+            live: p.live || undefined,
+          },
+          image: p.image || "",
+        })) || [],
+      });
+    }
+
+    setLoading(false);
+  };
 
   const steps = [
     { id: "profile", label: "Profile", component: ProfileStep },
@@ -61,16 +113,89 @@ const Builder = () => {
   };
 
   const handleSave = async () => {
-    // TODO: Replace with actual API call
-    // await fetch("/api/portfolio/update", { method: "POST", body: JSON.stringify(portfolioData) });
+    setSaving(true);
     
-    toast({
-      title: "Portfolio saved!",
-      description: "Your portfolio has been updated successfully.",
-    });
-    
-    navigate("/dashboard");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      // Upsert portfolio
+      const { data: portfolio, error: portfolioError } = await supabase
+        .from("portfolios")
+        .upsert({
+          user_id: session.user.id,
+          name: portfolioData.profile.name,
+          tagline: portfolioData.profile.tagline,
+          about: portfolioData.about,
+          profile_image: portfolioData.profile.image,
+        })
+        .select()
+        .single();
+
+      if (portfolioError) throw portfolioError;
+
+      // Delete existing skills and projects
+      await supabase.from("skills").delete().eq("portfolio_id", portfolio.id);
+      await supabase.from("projects").delete().eq("portfolio_id", portfolio.id);
+
+      // Insert new skills
+      if (portfolioData.skills.length > 0) {
+        const { error: skillsError } = await supabase
+          .from("skills")
+          .insert(
+            portfolioData.skills.map((skill) => ({
+              portfolio_id: portfolio.id,
+              skill,
+            }))
+          );
+        if (skillsError) throw skillsError;
+      }
+
+      // Insert new projects
+      if (portfolioData.projects.length > 0) {
+        const { error: projectsError } = await supabase
+          .from("projects")
+          .insert(
+            portfolioData.projects.map((project) => ({
+              portfolio_id: portfolio.id,
+              title: project.title,
+              description: project.description,
+              tech_stack: project.techStack,
+              github: project.links.github,
+              live: project.links.live,
+              image: project.image,
+            }))
+          );
+        if (projectsError) throw projectsError;
+      }
+
+      toast({
+        title: "Portfolio saved!",
+        description: "Your portfolio has been updated successfully.",
+      });
+
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save portfolio. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading portfolio...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -143,8 +268,8 @@ const Builder = () => {
             </Button>
             
             {currentStep === steps.length - 1 ? (
-              <Button onClick={handleSave}>
-                Save Portfolio
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Saving..." : "Save Portfolio"}
               </Button>
             ) : (
               <Button onClick={handleNext}>

@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowLeft } from "lucide-react";
+import { Sparkles, ArrowLeft, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { SAMPLE_DATA } from "@/data/sampleData";
 import ProfileStep from "@/components/builder/ProfileStep";
 import AboutStep from "@/components/builder/AboutStep";
 import SkillsStep from "@/components/builder/SkillsStep";
 import ProjectsStep from "@/components/builder/ProjectsStep";
 import PreviewStep from "@/components/builder/PreviewStep";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export interface PortfolioData {
   profile: {
@@ -88,6 +90,33 @@ const Builder = () => {
     }
 
     setLoading(false);
+  };
+
+  const loadSampleData = () => {
+    setPortfolioData({
+      profile: {
+        name: SAMPLE_DATA.name,
+        tagline: SAMPLE_DATA.tagline,
+        image: SAMPLE_DATA.profileImage,
+      },
+      about: SAMPLE_DATA.about,
+      skills: SAMPLE_DATA.skills.map(s => s.skill),
+      projects: SAMPLE_DATA.projects.map((p, i) => ({
+        id: `sample-${i}`,
+        title: p.title,
+        description: p.description,
+        techStack: p.techStack,
+        links: {
+          github: p.github || undefined,
+          live: p.live || undefined,
+        },
+        image: p.image,
+      })),
+    });
+    toast({
+      title: "Sample data loaded!",
+      description: "You can now preview and edit the sample portfolio.",
+    });
   };
 
   const steps = [
@@ -213,6 +242,17 @@ const Builder = () => {
               <span className="font-bold text-lg">Portfolio Builder</span>
             </div>
           </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="sm" onClick={loadSampleData}>
+                <Download className="w-4 h-4 mr-2" />
+                Load Sample
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Load pre-filled example data to get started quickly</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </header>
 

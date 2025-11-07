@@ -20,7 +20,7 @@ const Chat = () => {
     {
       id: "1",
       role: "assistant",
-      content: "Hi! I'm your portfolio assistant. I can help you edit your portfolio using natural language. Try commands like 'Add React to my skills' or 'Change my tagline to Software Engineer'.",
+      content: "Hi! I'm your portfolio assistant. I can help you edit your portfolio using natural language. Try commands like:\n\n• 'Add React to my skills'\n• 'Change my tagline to Full-Stack Developer'\n• 'Add a project called TaskApp'\n• 'Update my about section'\n\nJust type what you want to do!",
       timestamp: new Date(),
     },
   ]);
@@ -41,25 +41,126 @@ const Chat = () => {
     setInput("");
     setIsLoading(true);
 
-    // TODO: Replace with actual API call
-    // await fetch("/api/chat/command", { method: "POST", body: JSON.stringify({ command: input }) });
-
-    // Mock response
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "I've updated your portfolio! You can preview the changes in your dashboard.",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsLoading(false);
+    try {
+      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/portfolio-chat`;
       
-      toast({
-        title: "Portfolio updated",
-        description: "Your changes have been saved.",
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })) }),
       });
-    }, 1000);
+
+      if (!resp.ok) {
+        if (resp.status === 429) {
+          toast({
+            title: "Rate limit exceeded",
+            description: "Too many requests. Please try again in a moment.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (resp.status === 402) {
+          toast({
+            title: "Credits required",
+            description: "Please add credits to continue using AI features.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw new Error("Failed to start stream");
+      }
+
+      if (!resp.body) throw new Error("No response body");
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = "";
+      let streamDone = false;
+      let assistantContent = "";
+
+      // Create initial assistant message
+      const assistantId = (Date.now() + 1).toString();
+      setMessages(prev => [...prev, {
+        id: assistantId,
+        role: "assistant",
+        content: "",
+        timestamp: new Date(),
+      }]);
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") {
+            streamDone = true;
+            break;
+          }
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantContent += content;
+              setMessages(prev => prev.map(m => 
+                m.id === assistantId 
+                  ? { ...m, content: assistantContent }
+                  : m
+              ));
+            }
+          } catch {
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
+        }
+      }
+
+      // Final flush
+      if (textBuffer.trim()) {
+        for (let raw of textBuffer.split("\n")) {
+          if (!raw || raw.endsWith("\r")) raw = raw.slice(0, -1);
+          if (raw.startsWith(":") || raw.trim() === "") continue;
+          if (!raw.startsWith("data: ")) continue;
+          const jsonStr = raw.slice(6).trim();
+          if (jsonStr === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantContent += content;
+              setMessages(prev => prev.map(m => 
+                m.id === assistantId 
+                  ? { ...m, content: assistantContent }
+                  : m
+              ));
+            }
+          } catch { /* ignore */ }
+        }
+      }
+
+    } catch (error: any) {
+      console.error("Chat error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to get response. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

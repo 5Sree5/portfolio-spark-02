@@ -8,7 +8,57 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Dark theme base - always dark */
+    /* Light theme base */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+
+    --radius: 0.75rem;
+
+    /* Orange accent palette (default) */
+    --primary: 25 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 25 100% 45%;
+    
+    --accent: 25 90% 95%;
+    --accent-foreground: 25 100% 40%;
+    
+    --ring: 25 100% 50%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(25 100% 50%), hsl(15 100% 55%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 40% 98%));
+    --gradient-accent: linear-gradient(135deg, hsl(25 100% 50% / 0.1), hsl(15 100% 55% / 0.05));
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 20px -3px rgb(0 0 0 / 0.1);
+    --shadow-glow: 0 0 40px hsl(25 100% 50% / 0.15);
+    
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Dark mode */
+  .dark {
     --background: 217 33% 4%;
     --foreground: 210 20% 98%;
 
@@ -30,31 +80,16 @@ All colors MUST be HSL.
     --border: 217 20% 15%;
     --input: 217 20% 15%;
 
-    --radius: 0.75rem;
-
-    /* Orange accent palette (default) */
-    --primary: 25 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 25 100% 45%;
-    
     --accent: 25 90% 20%;
     --accent-foreground: 25 100% 70%;
     
-    --ring: 25 100% 50%;
-    
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(25 100% 50%), hsl(15 100% 55%));
     --gradient-subtle: linear-gradient(180deg, hsl(217 33% 4%), hsl(217 25% 7%));
     --gradient-accent: linear-gradient(135deg, hsl(25 100% 50% / 0.15), hsl(15 100% 55% / 0.05));
     
-    /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
     --shadow-lg: 0 10px 20px -3px rgb(0 0 0 / 0.5);
     --shadow-glow: 0 0 40px hsl(25 100% 50% / 0.25);
-    
-    /* Transitions */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Blue accent theme */
@@ -63,12 +98,19 @@ All colors MUST be HSL.
     --primary-foreground: 0 0% 100%;
     --primary-hover: 210 100% 45%;
     
-    --accent: 210 70% 20%;
-    --accent-foreground: 210 100% 70%;
+    --accent: 210 70% 95%;
+    --accent-foreground: 210 100% 40%;
     
     --ring: 210 100% 50%;
     
     --gradient-primary: linear-gradient(135deg, hsl(210 100% 50%), hsl(200 100% 55%));
+    --gradient-accent: linear-gradient(135deg, hsl(210 100% 50% / 0.1), hsl(200 100% 55% / 0.05));
+    --shadow-glow: 0 0 40px hsl(210 100% 50% / 0.15);
+  }
+
+  .dark[data-theme="blue"] {
+    --accent: 210 70% 20%;
+    --accent-foreground: 210 100% 70%;
     --gradient-accent: linear-gradient(135deg, hsl(210 100% 50% / 0.15), hsl(200 100% 55% / 0.05));
     --shadow-glow: 0 0 40px hsl(210 100% 50% / 0.25);
   }

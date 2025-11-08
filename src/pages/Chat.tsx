@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Sparkles, ArrowLeft, Send, User, Bot } from "lucide-react";
+import { Sparkles, ArrowLeft, Send, User, Bot, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   id: string;
@@ -20,12 +21,33 @@ const Chat = () => {
     {
       id: "1",
       role: "assistant",
-      content: "Hi! I'm your portfolio assistant. I can help you edit your portfolio using natural language. Try commands like:\n\n• 'Add React to my skills'\n• 'Change my tagline to Full-Stack Developer'\n• 'Add a project called TaskApp'\n• 'Update my about section'\n\nJust type what you want to do!",
+      content: "Hi! I'm your portfolio assistant. I can help you edit your portfolio using natural language. Try commands like:\n\n• 'Add React to my skills'\n• 'Change my tagline to Full-Stack Developer'\n• 'Update my about section to...'\n• 'Change my name to...'\n\nI'll make the changes directly to your portfolio. Just tell me what you want!",
       timestamp: new Date(),
     },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Auto-refresh portfolio data when changes are saved
+  useEffect(() => {
+    const channel = supabase
+      .channel('portfolio-changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public',
+        table: 'portfolios'
+      }, () => {
+        toast({
+          title: "Portfolio Updated",
+          description: "Your changes are now live!",
+        });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [toast]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -42,13 +64,14 @@ const Chat = () => {
     setIsLoading(true);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/portfolio-chat`;
       
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({ messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })) }),
       });
@@ -179,6 +202,15 @@ const Chat = () => {
               <span className="font-bold text-lg">AI Assistant</span>
             </div>
           </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate("/builder")}
+            className="transition-transform hover:scale-105"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            View Portfolio
+          </Button>
         </div>
       </header>
 

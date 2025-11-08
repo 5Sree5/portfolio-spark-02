@@ -21,11 +21,20 @@ const Index = () => {
             No coding required, just your creativity.
           </p>
           <div className="flex gap-4 justify-center">
-            <Button size="lg" onClick={() => navigate("/auth")}>
+            <Button 
+              size="lg" 
+              onClick={() => navigate("/auth")}
+              className="transition-all hover:scale-105 hover:shadow-glow"
+            >
               Get Started Free
             </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate("/u/johndoe")}>
-              View Example
+            <Button 
+              size="lg" 
+              variant="outline" 
+              onClick={() => navigate("/builder")}
+              className="transition-all hover:scale-105"
+            >
+              Try Builder
             </Button>
           </div>
         </div>
@@ -36,9 +45,9 @@ const Index = () => {
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Everything You Need</h2>
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-8 h-8 text-accent-foreground" />
+            <div className="text-center group">
+              <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mx-auto mb-4 transition-all group-hover:scale-110 group-hover:shadow-glow">
+                <Zap className="w-8 h-8 text-accent-foreground transition-transform group-hover:rotate-12" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Lightning Fast</h3>
               <p className="text-muted-foreground">
@@ -46,9 +55,9 @@ const Index = () => {
               </p>
             </div>
 
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mx-auto mb-4">
-                <Eye className="w-8 h-8 text-accent-foreground" />
+            <div className="text-center group">
+              <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mx-auto mb-4 transition-all group-hover:scale-110 group-hover:shadow-glow">
+                <Eye className="w-8 h-8 text-accent-foreground transition-transform group-hover:scale-125" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Beautiful Design</h3>
               <p className="text-muted-foreground">
@@ -56,9 +65,9 @@ const Index = () => {
               </p>
             </div>
 
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="w-8 h-8 text-accent-foreground" />
+            <div className="text-center group">
+              <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mx-auto mb-4 transition-all group-hover:scale-110 group-hover:shadow-glow">
+                <MessageSquare className="w-8 h-8 text-accent-foreground transition-transform group-hover:rotate-12" />
               </div>
               <h3 className="text-xl font-semibold mb-2">AI Assistant</h3>
               <p className="text-muted-foreground">
@@ -71,12 +80,16 @@ const Index = () => {
 
       {/* CTA Section */}
       <section className="container mx-auto px-4 py-20">
-        <div className="max-w-3xl mx-auto text-center bg-card rounded-3xl p-12 shadow-lg">
+        <div className="max-w-3xl mx-auto text-center bg-card rounded-3xl p-12 shadow-lg transition-all hover:shadow-glow hover:scale-[1.02]">
           <h2 className="text-4xl font-bold mb-4">Ready to Stand Out?</h2>
           <p className="text-lg text-muted-foreground mb-8">
             Join thousands of professionals who've built their portfolios with us
           </p>
-          <Button size="lg" onClick={() => navigate("/auth")}>
+          <Button 
+            size="lg" 
+            onClick={() => navigate("/auth")}
+            className="transition-all hover:scale-105 hover:shadow-glow"
+          >
             Create Your Portfolio
           </Button>
         </div>
